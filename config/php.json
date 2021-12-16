@@ -1,0 +1,9 @@
+{
+  "invokerPackage": "DocSpring",
+  "packageName": "DocSpring",
+  "packagePath": ".",
+  "gitUserId": "docspring",
+  "gitRepoId": "docspring",
+  "artifactVersion": "1.3.2",
+  "httpUserAgent": "docspring-php-#{VERSION}"
+}

@@ -1,0 +1,35 @@
+#!/bin/bash
+set -eo pipefail
+cd "$(dirname "$0")/../"
+
+if [ "$2" = "update_swagger" ]; then
+  echo "Updating DocSpring swagger specification..."
+  (../scripts/update_swagger)
+  for arg do
+    shift
+    [ "$arg" = "update_swagger" ] && continue
+    set -- "$@" "$arg"
+  done
+fi
+
+echo "Building docspring-generator..."
+# Sometimes we need to refresh java packages by building openapi-generator first.
+if ! ./scripts/build_docspring_generator; then
+  echo "./scripts/build_docspring_generator failed. Downloading OpenAPI generator first..."
+  ./scripts/download_openapi_generator
+  ./scripts/build_docspring_generator
+fi
+
+LANGUAGE="$1"
+
+if [ -z "$LANGUAGE" ]; then
+  for f in config/*; do
+    LANGUAGE="$(echo $f | sed -e "s/config\///g" -e "s/\.json//g")"
+    ./scripts/generate "$LANGUAGE"
+    ./scripts/run_integration_tests "$LANGUAGE"
+  done
+  exit
+fi
+
+./scripts/generate "$LANGUAGE"
+./scripts/run_integration_tests "$LANGUAGE" ${@:2}

@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/../.."
+VERSION=$(cat config/java.json | jq -r .artifactVersion)
+
+if [ -f .gpg_passphrase ]; then
+  echo "Loading GPG passphrase from docspring/api_clients/.gpg_passphrase" >&2
+  GPG_PASSPHRASE=$(cat .gpg_passphrase)
+  GPG_PASSPHRASE_ARG="-Darguments=\"-Dgpg.passphrase=$GPG_PASSPHRASE\""
+else
+  echo "No GPG passphrase found in docspring/api_clients/.gpg_passphrase!" >&2
+  exit 1
+fi
+
+cd "./clients/java"
+
+# Needed for entering GPG passphrase
+export GPG_TTY=$(tty)
+
+mvn -DskipTests clean deploy "$GPG_PASSPHRASE_ARG"

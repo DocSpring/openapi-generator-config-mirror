@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/../../clients/python"
+
+# It's useful to have access to the original generated tests,
+# so we can copy them into our custom specs and modify them.
+mv test/test_pdf_api.py test/test_pdf_api.py.original
+
+if command -v pip3 &> /dev/null; then
+  PIP_BIN="pip3"
+else
+  PIP_BIN="pip"
+fi
+
+set -x
+$PIP_BIN install -q -r requirements.txt
+$PIP_BIN install -q -r test-requirements.txt

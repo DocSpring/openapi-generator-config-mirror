@@ -1,0 +1,21 @@
+{
+  "modelPackage": "com.docspring",
+  "invokerPackage": "com.docspring",
+  "apiPackage": "com.docspring",
+  "groupId": "com.docspring",
+  "developerName": "DocSpring",
+  "developerEmail": "support@docspring.com",
+  "developerOrganization": "DocSpring",
+  "developerOrganizationUrl": "https://docspring.com",
+  "licenseName": "MIT",
+  "licenseUrl": "https://opensource.org/licenses/MIT",
+  "artifactVersion": "1.3.2",
+  "artifactId": "DocSpring",
+  "artifactUrl": "https://github.com/DocSpring/docspring-java",
+  "artifactDescription": "Java API client for the DocSpring PDF generation service",
+  "scmConnection": "scm:git:git@github.com:DocSpring/docspring-java.git",
+  "scmDeveloperConnection": "scm:git:git@github.com:DocSpring/docspring-java.git",
+  "scmUrl": "https://github.com/DocSpring/docspring-java",
+  "httpUserAgent": "docspring-java-#{VERSION}",
+  "library": "retrofit2"
+}

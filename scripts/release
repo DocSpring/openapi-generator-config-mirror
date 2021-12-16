@@ -1,0 +1,49 @@
+#!/bin/bash
+# I always forget to regenerate the API clients after bumping the versions.
+# So I'll do that in here too.
+set -e
+cd "$(dirname "$0")/.."
+
+if ! [ -e ".releases.json" ]; then echo "{}" > ".releases.json"; fi
+
+LANGUAGE="$1"
+
+generate_and_release() {
+  LANGUAGE="$1"
+  VERSION=$(./scripts/get_version $LANGUAGE)
+
+  RELEASED_VERSION=$(jq -r ".$LANGUAGE.released_version // empty" ".releases.json")
+  GITHUB_VERSION=$(jq -r ".$LANGUAGE.github_version // empty" ".releases.json")
+
+  if [ "$VERSION" = "$RELEASED_VERSION" ]; then
+    echo "====> $LANGUAGE client version $VERSION has already been released to package manager repository." >&2
+  else
+    echo "==> Generating $LANGUAGE client library..."
+    ./scripts/generate "$1"
+    echo "==> Committing changes..."
+    ./scripts/commit_changes "$1"
+    echo "==> Building and releasing new version..."
+    ./scripts/$1/release
+    jq -r ".$LANGUAGE.released_version = \"$VERSION\"" ".releases.json" > ".releases.json.tmp"
+    mv ".releases.json.tmp" ".releases.json"
+  fi
+
+  if [ "$VERSION" = "$GITHUB_VERSION" ]; then
+    echo "====> $LANGUAGE client version $VERSION has already been pushed to GitHub." >&2
+  else
+    echo "==> Pushing to GitHub..."
+    ./scripts/push_to_github "$1"
+    jq -r ".$LANGUAGE.github_version = \"$VERSION\"" ".releases.json" > ".releases.json.tmp"
+    mv ".releases.json.tmp" ".releases.json"
+  fi
+}
+
+if [ -n "$LANGUAGE" ]; then
+  generate_and_release "$LANGUAGE"
+  exit
+fi
+
+for f in config/*; do
+  LANGUAGE="$(echo $f | sed -e "s/config\///g" -e "s/\.json//g")"
+  generate_and_release "$LANGUAGE"
+done

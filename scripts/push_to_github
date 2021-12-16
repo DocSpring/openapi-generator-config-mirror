@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/.."
+
+LANGUAGE="$1"
+
+if [ -z "$LANGUAGE" ]; then
+  for f in config/*; do
+    LANG="$(echo $f | sed -e "s/config\///g" -e "s/\.json//g")"
+    ./scripts/push_to_github "$LANG"
+  done
+  exit
+fi
+
+if ! [ -f "config/$LANGUAGE.json" ]; then
+  echo "config/$LANGUAGE.json does not exist!"
+  exit 1
+fi
+
+VERSION=$(./scripts/get_version $LANGUAGE)
+
+echo "Pushing docspring-$LANGUAGE v$VERSION to GitHub..."
+
+cd "./clients/$LANGUAGE"
+
+git push origin main --tags

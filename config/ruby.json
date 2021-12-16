@@ -1,0 +1,13 @@
+{
+  "gemName": "docspring",
+  "moduleName": "DocSpring",
+  "gemVersion": "1.4.1",
+  "gemAuthor": "DocSpring",
+  "gemAuthorEmail": "support@docspring.com",
+  "gemHomepage": "https://github.com/DocSpring/docspring-ruby",
+  "gemSummary": "DocSpring API Client",
+  "gemDescription": "Client library for the DocSpring PDF generation and e-signature service",
+  "gemLicense": "MIT",
+  "hideGenerationTimestamp": true,
+  "httpUserAgent": "docspring-ruby-#{VERSION}"
+}

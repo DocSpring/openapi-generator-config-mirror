@@ -1,0 +1,5 @@
+{
+  "packageName": "docspring",
+  "packageVersion": "1.3.2",
+  "httpUserAgent": "docspring-python-#{VERSION}"
+}

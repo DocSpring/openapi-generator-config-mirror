@@ -1,0 +1,6 @@
+{
+  "targetFramework": "v4.5",
+  "packageName": "DocSpring.Client",
+  "packageVersion": "1.4.3",
+  "httpUserAgent": "docspring-csharp-#{VERSION}"
+}

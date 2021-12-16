@@ -1,0 +1,11 @@
+#!/bin/bash
+set -eo pipefail
+CURRENT_DIR="$(realpath $(dirname "$0"))"
+ROOT_DIR="$(realpath $CURRENT_DIR/../..)"
+
+# Generate test files with shared examples
+$ROOT_DIR/scripts/compile_api_client_templates
+
+cd "$(dirname "$0")/../docspring-generator"
+mvn package -DskipTests=true
+cp target/docspring-generator-1.0.0.jar ../docspring-generator.jar

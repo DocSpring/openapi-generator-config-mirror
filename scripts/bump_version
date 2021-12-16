@@ -1,0 +1,182 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'highline/import'
+
+VERSION_REGEX = /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$/.freeze
+VERSION_TYPES = %w[major minor patch].freeze
+LANGUAGES = Dir.glob(File.expand_path('../config/*.json', __dir__)).map do |f|
+  f[%r{/([^/]+)\.json$}, 1]
+end.freeze
+LANGUAGE_MAX_LENGTH = LANGUAGES.map(&:length).max
+VERSION_KEYS = {
+  csharp: :packageVersion,
+  java: :artifactVersion,
+  javascript: :projectVersion,
+  php: :artifactVersion,
+  python: :packageVersion,
+  ruby: :gemVersion,
+  go: :packageVersion,
+}.freeze
+
+@dry_run = false
+if ARGV.last == '--dry'
+  puts 'Running with the --dry flag. New versions will be printed ' \
+    'to the console but not saved.'
+  @dry_run = true
+  ARGV.pop
+end
+
+if ARGV.empty?
+  version_options = VERSION_TYPES.join('|')
+  puts "Usage: bump_version <#{version_options}> [--dry]  " \
+    '(to bump all clients)'
+  language_options = LANGUAGES.join('|')
+  puts "Or:    bump_version <#{language_options}> <#{version_options}> [--dry]"
+  exit 1
+end
+
+language = nil
+version_type = nil
+if ARGV.count == 1
+  version_type = ARGV[0]
+elsif ARGV.count == 2
+  language = ARGV[0]
+  version_type = ARGV[1]
+end
+
+unless VERSION_TYPES.include?(version_type)
+  puts "'#{version_type}' is not a valid version type. Must be one of: " \
+    "#{VERSION_TYPES.join(', ')}"
+  exit 1
+end
+if !language.nil? && !LANGUAGES.include?(language)
+  puts "'#{language}' is not a valid language. Must be one of: " \
+    "#{LANGUAGES.join(', ')}"
+  exit 1
+end
+
+def increment_major(match)
+  [match[:major].to_i + 1, 0, 0].join('.')
+end
+
+def increment_minor(match)
+  [match[:major], match[:minor].to_i + 1, 0].join('.')
+end
+
+def increment_patch(match)
+  [match[:major], match[:minor], match[:patch].to_i + 1].join('.')
+end
+
+def increment_version(version_type, match)
+  case version_type
+  when :major then increment_major(match)
+  when :minor then increment_minor(match)
+  when :patch then increment_patch(match)
+  else raise "Invalid version type: #{version_type}"
+  end
+end
+
+def config_file_for(language)
+  File.expand_path("../config/#{language}.json", __dir__)
+end
+
+def changelog_file_for(language)
+  File.expand_path("../changelogs/CHANGELOG.#{language}.md", __dir__)
+end
+
+def update_version_for(language)
+  config_file = config_file_for(language)
+  config = JSON.parse(File.read(config_file))
+  version_key = VERSION_KEYS.fetch(language).to_s
+  current_version = config[version_key]
+  new_version = yield current_version
+  puts [current_version, new_version].join(' => ')
+  config[version_key] = new_version
+  return if @dry_run
+
+  File.open(config_file, 'w') { |f| f.puts JSON.pretty_generate(config) }
+  new_version
+end
+
+def update_changelog(language)
+  changelog_file = changelog_file_for(language)
+  new_changelog = yield File.read(changelog_file)
+  return if new_changelog == false
+
+  puts "Adding entry to #{language} changelog..."
+  File.open(changelog_file, 'w') { |f| f.puts new_changelog }
+end
+
+def new_changelog_entry(new_version, changelog_entries)
+  date = Time.now.strftime('%B %-d, %Y')
+  changelog_lines = ["### #{new_version} [#{date}]"]
+  changelog_lines << ''
+  changelog_entries.each do |l|
+    changelog_lines << "- #{l}"
+  end
+  changelog_lines << ''
+  changelog_lines
+end
+
+def add_changelog_entries(language, new_version, changelog_entries)
+  update_changelog language do |current_changelog|
+    if current_changelog.include?("### #{new_version}")
+      puts "#{language} changelog already includes an entry for #{new_version}!"
+      return false
+    end
+    [
+      new_changelog_entry(new_version, changelog_entries).join("\n"),
+      current_changelog,
+    ].join("\n")
+  end
+end
+
+def bump_version(language, version_type, changelog_entries)
+  puts "Bumping #{version_type} version for #{language} client..."
+  new_version = update_version_for language do |current_version|
+    version_match = current_version.match(VERSION_REGEX)
+    unless version_match
+      raise "#{current_version} is invalid! Format must match: x.x.x"
+    end
+
+    increment_version(version_type, version_match)
+  end
+  add_changelog_entries(language, new_version, changelog_entries)
+end
+
+def prompt_for_changelog_entries
+  puts '----------------------------------------------------------------'
+  puts 'Remember to prefix breaking changes with "**BREAKING CHANGE**: "'
+  puts "----------------------------------------------------------------\n\n"
+  entries = []
+  loop do
+    input = ask 'Add Changelog Entry (leave blank to end): '
+    break if input == ''
+
+    entries << input
+  end
+  entries << 'No significant code changes' if entries.empty?
+  entries
+end
+
+def confirm_changelog_entries!(entries)
+  puts "\nChangelog Entries:\n\n"
+  puts entries.map { |l| "* #{l}" }.join("\n")
+  puts
+
+  confirm = ask('OK? [y/n] ') { |yn| yn.limit = 1, yn.validate = /[yn]/i }
+  exit unless confirm.casecmp('y').zero?
+end
+
+changelog_entries = prompt_for_changelog_entries
+confirm_changelog_entries!(changelog_entries)
+
+if language
+  bump_version(language.to_sym, version_type.to_sym, changelog_entries)
+else
+  LANGUAGES.each do |l|
+    bump_version(l.to_sym, version_type.to_sym, changelog_entries)
+  end
+end

@@ -1,0 +1,7 @@
+com.docspring.codegen.DocSpringRubyClientCodegen
+com.docspring.codegen.DocSpringPythonClientCodegen
+com.docspring.codegen.DocSpringPhpClientCodegen
+com.docspring.codegen.DocSpringCSharpClientCodegen
+com.docspring.codegen.DocSpringJavascriptClientCodegen
+com.docspring.codegen.DocSpringJavaClientCodegen
+com.docspring.codegen.DocSpringGoClientCodegen

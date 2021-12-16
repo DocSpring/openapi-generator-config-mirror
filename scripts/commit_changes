@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/.."
+
+LANGUAGE="$1"
+
+if [ -z "$LANGUAGE" ]; then
+  for f in config/*; do
+    LANG="$(echo $f | sed -e "s/config\///g" -e "s/\.json//g")"
+    ./scripts/commit_changes "$LANG"
+  done
+  exit
+fi
+
+if ! [ -f "config/$LANGUAGE.json" ]; then
+  echo "config/$LANGUAGE.json does not exist!"
+  exit 1
+fi
+
+VERSION=$(./scripts/get_version $LANGUAGE)
+
+echo "+ cd ./clients/$LANGUAGE"
+cd "./clients/$LANGUAGE"
+
+if ! [ -d .git ]; then
+  echo "Initializing git repository for clients/$LANGUAGE..."
+  git init
+  git remote add origin "git@github.com:DocSpring/docspring-$LANGUAGE.git"
+  echo "Pulling code from DocSpring/docspring-$LANGUAGE.git..."
+  git fetch origin
+  git reset --hard origin/main || true
+  echo "Pulled DocSpring/docspring-$LANGUAGE from GitHub and reset the main branch to origin/main."
+  echo "Please re-run the generator script, then run the release script again"
+  echo "to commit the changes."
+  exit 1
+fi
+
+if git diff --quiet HEAD; then
+  echo "Nothing to commit."
+  exit 0
+fi
+
+echo "Committing changes for docspring-$LANGUAGE v$VERSION..."
+
+COMMIT_MESSAGE="Updated on $(date "+%F %T"). Version: $VERSION"
+git add -A
+git commit -m "$COMMIT_MESSAGE"
+echo "Committed changes with message: $COMMIT_MESSAGE"
+
+# Need to tag the new version, otherwise it's not picked up by packagist (for PHP)
+echo "Tagging commit: v$VERSION"
+git tag -f "v$VERSION"

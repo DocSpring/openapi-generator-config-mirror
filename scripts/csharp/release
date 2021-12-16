@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/../.."
+./scripts/csharp/build
+
+cd "clients/csharp/src/DocSpring.Client"
+rm -f DocSpring.Client.*.nupkg
+nuget pack -Build -OutputDirectory . DocSpring.Client.csproj
+
+# Visit https://www.nuget.org/account/apikeys, then run:
+# $ nuget setApiKey ...
+nuget push DocSpring.Client.*.nupkg -Source https://www.nuget.org

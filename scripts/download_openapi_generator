@@ -1,0 +1,16 @@
+#!/bin/bash
+set -eo pipefail
+CURRENT_DIR="$(realpath $(dirname "$0"))"
+ROOT_DIR="$(realpath $CURRENT_DIR/../..)"
+
+OPENAPI_GENERATOR_VERSION=$(cat $ROOT_DIR/.openapi-generator-version)
+
+echo "Downloading OpenAPI Generator $OPENAPI_GENERATOR_VERSION to openapi-generator-cli-$OPENAPI_GENERATOR_VERSION.jar..."
+
+curl "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/$OPENAPI_GENERATOR_VERSION/\
+openapi-generator-cli-$OPENAPI_GENERATOR_VERSION.jar" -o \
+  "$CURRENT_DIR/../openapi-generator-cli-$OPENAPI_GENERATOR_VERSION.jar" || true
+
+set -x
+ln -fs "$ROOT_DIR/api_clients/openapi-generator-cli-$OPENAPI_GENERATOR_VERSION.jar" \
+  "$ROOT_DIR/api_clients/openapi-generator-cli.jar"

@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")"
+
+# build_docspring_generator copies the jar into the root api_clients folder.
+JAVA_LIBS="docspring-generator.jar:"
+
+if [ -f /opt/openapi-generator-cli.jar ]; then
+  JAVA_LIBS="${JAVA_LIBS}/opt/"
+fi
+JAVA_LIBS="${JAVA_LIBS}openapi-generator-cli.jar"
+
+java $JAVA_OPTS -cp "$JAVA_LIBS" org.openapitools.codegen.OpenAPIGenerator "$@"
